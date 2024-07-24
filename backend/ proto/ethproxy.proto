@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package ethproxy;
+
+option go_package = "./pb";
+
+service EthProxy {
+  rpc EthSendTransaction(SendTransactionRequest) returns (TransactionReceipt);
+}
+
+message SendTransactionRequest {
+  string from = 1;
+  string to = 2;
+  string gas = 3;
+  string gasPrice = 4;
+  string value = 5;
+  string data = 6;
+  string nonce = 7;
+}
+
+message TransactionReceipt {
+  string hash = 1;
+}
