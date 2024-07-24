@@ -2,8 +2,8 @@ package service
 
 import (
 	"backend/pb"
+	"backend/pkg/utils"
 	"context"
-	"fmt"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"log"
 )
@@ -18,21 +18,26 @@ type SendTransactionResponse struct {
 }
 
 func (ps *ProxyService) getLatestBlockNumber() uint64 {
-	log.Print("pokusaj")
 	blockNumber, err := ps.EthClient.BlockNumber(context.Background())
 	if err != nil {
 		log.Println("Error fetching latest block header:", err)
 		return 0
 	}
-	log.Print(blockNumber)
 	return blockNumber
 }
 
-func (ps *ProxyService) EthSendTransaction(ctx context.Context, args *pb.SendTransactionRequest) (*pb.TransactionReceipt, error) {
+func (ps *ProxyService) sendTransaction(args *pb.SendTransactionRequest) (string, error) {
+	var txnHash string
+	err := ps.EthClient.Client().Call(&txnHash, "eth_sendTransaction", args)
 
-	blockNum := ps.getLatestBlockNumber()
-	log.Print(blockNum)
+	return txnHash, err
+}
+
+func (ps *ProxyService) EthSendTransaction(ctx context.Context, args *pb.SendTransactionRequest) (*pb.TransactionReceipt, error) {
+	txnHash, err := ps.sendTransaction(args)
+
+	utils.Handle(err)
 	return &pb.TransactionReceipt{
-		Hash: fmt.Sprint(blockNum),
+		Hash: txnHash,
 	}, nil
 }

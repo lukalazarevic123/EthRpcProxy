@@ -16,3 +16,9 @@ type SendTransactionRequest struct {
 	Params  []SendTransactionArgs `json:"params"`
 	ID      int                   `json:"id"`
 }
+
+type SendTransactionResponse struct {
+	Id      int    `json:"id"`
+	Jsonrpc string `json:"jsonrpc"`
+	Result  string `json:"result"`
+}
