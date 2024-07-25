@@ -2,7 +2,7 @@ package service
 
 import (
 	"backend/pb"
-	"backend/pkg/utils"
+	"backend/pkg/cache"
 	"context"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"log"
@@ -11,6 +11,7 @@ import (
 type ProxyService struct {
 	pb.UnimplementedEthProxyServer
 	EthClient *ethclient.Client
+	Cache     *cache.LRUCache
 }
 
 type SendTransactionResponse struct {
@@ -35,8 +36,20 @@ func (ps *ProxyService) sendTransaction(args *pb.SendTransactionRequest) (string
 
 func (ps *ProxyService) EthSendTransaction(ctx context.Context, args *pb.SendTransactionRequest) (*pb.TransactionReceipt, error) {
 	txnHash, err := ps.sendTransaction(args)
+	blockNum := ps.getLatestBlockNumber()
 
-	utils.Handle(err)
+	if err != nil {
+		return &pb.TransactionReceipt{
+			Hash: err.Error(),
+		}, nil
+	}
+
+	ps.Cache.Set(args.From, &cache.HolderInfo{
+		BlockNumber:   int(blockNum),
+		HolderAddress: args.From,
+		IsHolder:      true,
+	})
+
 	return &pb.TransactionReceipt{
 		Hash: txnHash,
 	}, nil

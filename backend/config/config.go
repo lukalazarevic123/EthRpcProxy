@@ -9,6 +9,7 @@ type Config struct {
 	Port      string
 	Interval  string
 	EthRpcUrl string
+	CacheCap  string
 }
 
 func NewConfig() *Config {
@@ -16,6 +17,7 @@ func NewConfig() *Config {
 		Port:      readEnvVar("PORT"),
 		Interval:  readEnvVar("INTERVAL"),
 		EthRpcUrl: readEnvVar("ETH_RPC_URL"),
+		CacheCap:  readEnvVar("CACHE_CAP"),
 	}
 }
 

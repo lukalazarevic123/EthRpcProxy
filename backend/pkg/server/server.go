@@ -3,6 +3,7 @@ package server
 import (
 	"backend/config"
 	"backend/pb"
+	"backend/pkg/cache"
 	"backend/pkg/service"
 	"backend/pkg/utils"
 	"fmt"
@@ -11,6 +12,7 @@ import (
 	"google.golang.org/grpc/reflection"
 	"log"
 	"net"
+	"strconv"
 )
 
 type Server struct {
@@ -34,8 +36,14 @@ func (server *Server) Start() {
 	ethClient, err := ethclient.Dial(server.config.EthRpcUrl)
 	utils.Handle(err)
 
+	cacheCap, err := strconv.Atoi(server.config.CacheCap)
+	utils.Handle(err)
+
+	lruCache := cache.NewLRUCache(cacheCap)
+
 	pb.RegisterEthProxyServer(s, &service.ProxyService{
 		EthClient: ethClient,
+		Cache:     lruCache,
 	})
 
 	log.Print("Server staring on port: ", server.config.Port)
