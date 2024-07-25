@@ -6,12 +6,15 @@ import (
 	"backend/pkg/cache"
 	"backend/pkg/service"
 	"backend/pkg/utils"
+	"bytes"
 	"fmt"
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 	"log"
 	"net"
+	"os"
 	"strconv"
 )
 
@@ -36,18 +39,24 @@ func (server *Server) Start() {
 	ethClient, err := ethclient.Dial(server.config.EthRpcUrl)
 	utils.Handle(err)
 
+	abiData, err := os.ReadFile("./abi/ProxyNFT.json")
+	utils.Handle(err)
+
+	nftAbi, err := abi.JSON(bytes.NewReader(abiData))
+	utils.Handle(err)
+	log.Print(nftAbi)
 	cacheCap, err := strconv.Atoi(server.config.CacheCap)
 	utils.Handle(err)
 
 	lruCache := cache.NewLRUCache(cacheCap)
 
 	proxyService := &service.ProxyService{
-		EthClient: ethClient,
-		Cache:     lruCache,
-		Config:    server.config,
+		EthClient:   ethClient,
+		Cache:       lruCache,
+		Config:      server.config,
+		ProxyNftAbi: nftAbi,
 	}
 	go proxyService.StartCacheValidation()
-
 	pb.RegisterEthProxyServer(s, proxyService)
 
 	log.Print("Server staring on port: ", server.config.Port)

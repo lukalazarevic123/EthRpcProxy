@@ -6,18 +6,20 @@ import (
 )
 
 type Config struct {
-	Port      string
-	Interval  string
-	EthRpcUrl string
-	CacheCap  string
+	Port            string
+	Interval        string
+	EthRpcUrl       string
+	CacheCap        string
+	ProxyNftAddress string
 }
 
 func NewConfig() *Config {
 	return &Config{
-		Port:      readEnvVar("PORT"),
-		Interval:  readEnvVar("INTERVAL"),
-		EthRpcUrl: readEnvVar("ETH_RPC_URL"),
-		CacheCap:  readEnvVar("CACHE_CAP"),
+		Port:            readEnvVar("PORT"),
+		Interval:        readEnvVar("INTERVAL"),
+		EthRpcUrl:       readEnvVar("ETH_RPC_URL"),
+		CacheCap:        readEnvVar("CACHE_CAP"),
+		ProxyNftAddress: readEnvVar("PROXY_NFT_ADDRESS"),
 	}
 }
 
