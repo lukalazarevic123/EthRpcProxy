@@ -69,20 +69,22 @@ func (ps *ProxyService) StartCacheValidation() {
 		for _, key := range cacheKeys {
 			holderInfo, _ := ps.Cache.Get(key)
 
-			if holderInfo.BlockNumber < int(currentBlockNumber) {
-				isHolder, err := ps.CheckHolder(holderInfo.HolderAddress)
-
-				if err != nil {
-					log.Print("Error checking the holder: ", err.Error())
-				}
-
-				log.Print("Updating holder ", key)
-				ps.Cache.Set(key, &cache.HolderInfo{
-					HolderAddress: key,
-					IsHolder:      isHolder,
-					BlockNumber:   int(currentBlockNumber),
-				})
+			if holderInfo.BlockNumber == int(currentBlockNumber) {
+				continue
 			}
+
+			isHolder, err := ps.CheckHolder(holderInfo.HolderAddress)
+
+			if err != nil {
+				log.Print("Error checking the holder: ", err.Error())
+			}
+
+			log.Print("Updating holder ", key)
+			ps.Cache.Set(key, &cache.HolderInfo{
+				HolderAddress: key,
+				IsHolder:      isHolder,
+				BlockNumber:   int(currentBlockNumber),
+			})
 		}
 
 		lastBlockNumber = currentBlockNumber
