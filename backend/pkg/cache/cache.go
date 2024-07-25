@@ -65,3 +65,22 @@ func (c *LRUCache) Set(key string, holder *HolderInfo) {
 		delete(c.storage, backElementKey)
 	}
 }
+
+func (c *LRUCache) GetAll() []*HolderInfo {
+	var allElements []*HolderInfo
+	for e := c.ls.Front(); e != nil; e = e.Next() {
+		key := e.Value.(string)
+		if element, found := c.storage[key]; found {
+			allElements = append(allElements, element.info)
+		}
+	}
+	return allElements
+}
+
+func (c *LRUCache) GetKeys() []string {
+	keys := make([]string, 0, len(c.storage))
+	for key := range c.storage {
+		keys = append(keys, key)
+	}
+	return keys
+}

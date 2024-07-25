@@ -41,10 +41,14 @@ func (server *Server) Start() {
 
 	lruCache := cache.NewLRUCache(cacheCap)
 
-	pb.RegisterEthProxyServer(s, &service.ProxyService{
+	proxyService := &service.ProxyService{
 		EthClient: ethClient,
 		Cache:     lruCache,
-	})
+		Config:    server.config,
+	}
+	go proxyService.StartCacheValidation()
+
+	pb.RegisterEthProxyServer(s, proxyService)
 
 	log.Print("Server staring on port: ", server.config.Port)
 	if err := s.Serve(listener); err != nil {
