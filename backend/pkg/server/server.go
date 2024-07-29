@@ -4,6 +4,9 @@ import (
 	"backend/config"
 	"backend/pb"
 	"backend/pkg/cache"
+	"backend/pkg/db"
+	"backend/pkg/db/model"
+	"backend/pkg/repo"
 	"backend/pkg/service"
 	"backend/pkg/utils"
 	"bytes"
@@ -15,7 +18,9 @@ import (
 	"log"
 	"net"
 	"os"
+	"os/signal"
 	"strconv"
+	"syscall"
 )
 
 type Server struct {
@@ -27,6 +32,19 @@ func NewServer(config *config.Config) *Server {
 	return &Server{
 		config: config,
 	}
+}
+
+func initTerminationChan(proxyService *service.ProxyService) {
+	termChan := make(chan os.Signal, 1)
+	signal.Notify(termChan, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		<-termChan
+		log.Print("Received termination signal, storing cache...")
+		proxyService.StoreCache()
+		os.Exit(1)
+
+	}()
 }
 
 func (server *Server) Start() {
@@ -44,19 +62,38 @@ func (server *Server) Start() {
 
 	nftAbi, err := abi.JSON(bytes.NewReader(abiData))
 	utils.Handle(err)
-	log.Print(nftAbi)
+
 	cacheCap, err := strconv.Atoi(server.config.CacheCap)
 	utils.Handle(err)
 
 	lruCache := cache.NewLRUCache(cacheCap)
+	gormDB, err := db.Init(server.config.DB)
+
+	if err != nil {
+		log.Fatal("Could not connect to the database", err.Error())
+		return
+	}
 
 	proxyService := &service.ProxyService{
 		EthClient:   ethClient,
 		Cache:       lruCache,
 		Config:      server.config,
 		ProxyNftAbi: nftAbi,
+		HolderRepo: repo.Repo[model.HolderEntity]{
+			DB: gormDB,
+		},
 	}
+
+	err = proxyService.LoadCacheFromDB()
+
+	if err != nil {
+		log.Fatal("Could not load cache from the database ", err.Error())
+		return
+	}
+
 	go proxyService.StartCacheValidation()
+	initTerminationChan(proxyService)
+
 	pb.RegisterEthProxyServer(s, proxyService)
 
 	log.Print("Server staring on port: ", server.config.Port)

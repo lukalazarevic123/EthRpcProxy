@@ -4,6 +4,8 @@ import (
 	"backend/config"
 	"backend/pb"
 	"backend/pkg/cache"
+	"backend/pkg/db/model"
+	"backend/pkg/repo"
 	"backend/pkg/utils"
 	"context"
 	"errors"
@@ -19,6 +21,7 @@ import (
 
 type ProxyService struct {
 	pb.UnimplementedEthProxyServer
+	HolderRepo  repo.Repo[model.HolderEntity]
 	EthClient   *ethclient.Client
 	Cache       *cache.LRUCache
 	Config      *config.Config
@@ -43,6 +46,49 @@ func (ps *ProxyService) sendTransaction(args *pb.SendTransactionRequest) (string
 	err := ps.EthClient.Client().Call(&txnHash, "eth_sendTransaction", args)
 
 	return txnHash, err
+}
+
+func (ps *ProxyService) LoadCacheFromDB() error {
+	ctx := context.Background()
+
+	holders, err := ps.HolderRepo.GetAll(ctx)
+	if err != nil {
+		return err
+	}
+
+	err = ps.HolderRepo.DeleteAll(ctx)
+	if err != nil {
+		return err
+	}
+
+	for _, holder := range holders {
+		ps.Cache.Set(holder.HolderAddress, &cache.HolderInfo{
+			BlockNumber:   holder.BlockNumber,
+			IsHolder:      holder.IsHolder,
+			HolderAddress: holder.HolderAddress,
+		})
+	}
+
+	return nil
+}
+
+func (ps *ProxyService) StoreCache() {
+	ctx := context.Background()
+	holders := ps.Cache.GetAll()
+	log.Print("Whole cache ", holders)
+
+	if len(holders) == 0 {
+		return
+	}
+
+	for _, holder := range holders {
+		ps.HolderRepo.Create(ctx, &model.HolderEntity{
+			BlockNumber:   holder.BlockNumber,
+			IsHolder:      holder.IsHolder,
+			HolderAddress: holder.HolderAddress,
+		})
+	}
+
 }
 
 func (ps *ProxyService) StartCacheValidation() {
@@ -148,8 +194,6 @@ func (ps *ProxyService) AuthorizeHolder(walletAddress string) (bool, error) {
 }
 
 func (ps *ProxyService) EthSendTransaction(ctx context.Context, args *pb.SendTransactionRequest) (*pb.TransactionReceipt, error) {
-	txnHash, err := ps.sendTransaction(args)
-
 	isAuthorized, err := ps.AuthorizeHolder(args.From)
 
 	if err != nil {
@@ -160,6 +204,8 @@ func (ps *ProxyService) EthSendTransaction(ctx context.Context, args *pb.SendTra
 	if !isAuthorized {
 		return nil, errors.New("Sender doesn't own the access token")
 	}
+
+	txnHash, err := ps.sendTransaction(args)
 
 	if err != nil {
 		return &pb.TransactionReceipt{

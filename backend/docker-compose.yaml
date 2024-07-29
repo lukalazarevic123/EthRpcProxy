@@ -1,0 +1,43 @@
+version: "3"
+services:
+  eth-proxy-pg:
+    image: postgres:latest
+    restart: always
+    container_name: eth-proxy-pg
+    environment:
+      POSTGRES_USER: XML
+      POSTGRES_PASSWORD: ftn
+      POSTGRES_DB: XML_TEST
+    ports:
+      - "4004:5432"
+    networks:
+      - proxy_network
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", 'pg_isready -U XML -d "XML_TEST"']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  eth-rpc-proxy:
+    build: .
+    image: eth-rpc-proxy
+    container_name: eth-rpc-proxy
+    restart: always
+    env_file:
+      - .env
+    ports:
+      - "${PORT}:${PORT}"
+    networks:
+      - proxy_network
+    depends_on:
+      eth-proxy-pg:
+        condition: service_healthy
+
+volumes:
+  pg_data:
+
+networks:
+  proxy_network:
+    driver: bridge
