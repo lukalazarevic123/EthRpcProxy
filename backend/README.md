@@ -16,6 +16,25 @@ docker-compose up -d
 ```
 
 You can also just run the database, and start the service locally.
+If you don't have access to publicly available RPCs, you can run
+your own fork of the chain with `ganache-cli`
+
+Install it with `npm`:
+```bash
+npm install ganache -g
+```
+And start it with:
+```bash
+ganache
+```
+
+If you want to change the proto files and generate new code, you can do so with the 
+prepared `Makefile` by running:
+```bash
+make generate
+```
+
+Just make sure you have `protoc` installed on your machine.
 
 ### Testing
 
