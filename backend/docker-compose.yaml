@@ -5,9 +5,9 @@ services:
     restart: always
     container_name: eth-proxy-pg
     environment:
-      POSTGRES_USER: XML
-      POSTGRES_PASSWORD: ftn
-      POSTGRES_DB: XML_TEST
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: PROXY_DB
     ports:
       - "4004:5432"
     networks:
