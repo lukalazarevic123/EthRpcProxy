@@ -8,6 +8,7 @@ strategy. Only holders of a specific NFT can submit transactions.
 Before running the project, make sure you setup the environment by creating a
 `.env` file. You can use the `.env.test` for reference.
 
+
 ### Runing the project
 
 If you wish to run the project with Docker, you can do so by running: 
@@ -45,5 +46,7 @@ Runnig this command will start a local server on `http://127.0.0.1:8080/` where 
 the test coverage.
 
 ```bash
+go install github.com/smartystreets/goconvey
+
 goconvey -cover
 ```
