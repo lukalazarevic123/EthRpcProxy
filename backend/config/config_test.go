@@ -21,11 +21,11 @@ func TestNewConfig(t *testing.T) {
 		expectedEthRpcUrl := "http://localhost:8545"
 		expectedCacheCap := "100"
 		expectedProxyNftAddress := "0xa2133A0F6B8A70D70E75238C7C0d84A0cD3F1Db3"
-		expectedDBHost := "localhost"
+		expectedDBHost := "eth-proxy-pg"
 		expectedDBPort := 5432
 		expectedDBUser := "user"
 		expectedDBPassword := "password"
-		expectedDBName := "dbname"
+		expectedDBName := "PROXY_DB"
 		expectedDBSslMode := "disable"
 
 		os.Setenv("PORT", expectedPort)
